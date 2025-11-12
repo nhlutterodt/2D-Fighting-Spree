@@ -20,6 +20,12 @@ firebase-debug.log
 firebase-debug.*.log
 firestore-debug.log
 ui-debug.log
+*.cache
+
+# Firebase Functions
+functions/lib/
+functions/node_modules/
+functions/.runtimeconfig.json
 
 # misc
 .DS_Store
