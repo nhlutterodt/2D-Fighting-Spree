@@ -15,10 +15,11 @@ import DevOverlay from '../ui/DevOverlay';
  */
 const MatchPreview = () => {
   const { data, resetTo } = useFlow();
-  const { config, p1, p2, stage } = data;
+  const { config, p1, p2, stage } = data ?? {};
   const canvasRef = useRef(null);
   const managerRef = useRef(null);
   const [paused, setPaused] = useState(false);
+  const [hud, setHud] = useState(() => ({ timer: config?.timeLimit ?? 0, p1HP: 100, p2HP: 100 }));
   const [devOpen, setDevOpen] = useState(false);
   const [hud, setHud] = useState({ timer: config.timeLimit, p1HP: 100, p2HP: 100 });
   const [logs, setLogs] = useState([]);
@@ -30,6 +31,28 @@ const MatchPreview = () => {
   const meta = useMemo(
     () => ({
       p1: p1 || 'Rhea',
+      p2: (p2 === 'NPC' ? 'NPC' : p2) || 'NPC',
+      stage: stage || 'Dojo Dusk'
+    }),
+    [p1, p2, stage]
+  );
+
+  const configIsValid = useMemo(
+    () =>
+      Boolean(
+        config &&
+          Number.isFinite(config.timeLimit) &&
+          Number.isFinite(config.rounds) &&
+          typeof config.difficulty === 'string' && config.difficulty.length > 0
+      ),
+    [config]
+  );
+
+  useEffect(() => {
+    if (!configIsValid) {
+      resetTo('MainMenu');
+      return undefined;
+    }
       p2: p2 === 'NPC' ? 'NPC' : p2,
       stage: stage || 'Dojo Dusk',
     }),
@@ -65,12 +88,19 @@ const MatchPreview = () => {
     const manager = new SceneManager({ canvas, width: CANVAS.WIDTH, height: CANVAS.HEIGHT, logger, logLevel: 'info' });
     const manager = new SceneManager({ canvas, width: CANVAS.WIDTH, height: CANVAS.HEIGHT });
     managerRef.current = manager;
+    setPaused(false);
 
     manager.register('match-preview', createMatchPreviewScene);
     manager.register('pause-overlay', createPauseOverlayScene({ hint: 'Resume to continue the simulation' }));
 
     manager.start('match-preview', { config, meta, onHUD: setHud });
 
+    return () => {
+      manager.stop();
+      managerRef.current = null;
+      setPaused(false);
+    };
+  }, [config, configIsValid, meta, resetTo]);
     const handleKeyToggle = (e) => {
       if (e.key === 'F1') {
         e.preventDefault();
@@ -118,7 +148,7 @@ const MatchPreview = () => {
             <div className="font-bold">{meta.stage}</div>
           </div>
           <div className="text-white/70">
-            Rounds: {config.rounds} • Time: {Math.round(hud.timer)}s • Diff: {config.difficulty}
+            Rounds: {config?.rounds ?? '?'} • Time: {Math.round(hud.timer)}s • Diff: {config?.difficulty}
           </div>
           <div className="flex gap-2">
             <Button
