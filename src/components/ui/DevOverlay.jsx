@@ -160,6 +160,7 @@ DevOverlay.propTypes = {
 DevOverlay.defaultProps = {
   open: false,
   manager: null,
+  logs: [],
   onToggle: undefined,
 };
 
