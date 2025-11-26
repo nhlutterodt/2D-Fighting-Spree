@@ -7,4 +7,4 @@ export { default as MainMenu } from './MainMenu';
 export { default as StartConfig } from './StartConfig';
 export { default as FighterSelect } from './FighterSelect';
 export { default as StageSelect } from './StageSelect';
-export { default as MatchPreview } from './MatchPreviewWorking';
+export { default as MatchPreview } from './MatchPreview';

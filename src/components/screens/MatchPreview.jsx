@@ -1,15 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 import { Card, Button } from '../ui';
 import { CANVAS, SIMULATION } from '../../constants/physics';
 import { nowSec, readGamepad } from '../../utils/helpers';
-import { 
-  drawBackground, 
-  drawFighter, 
-  drawSpark, 
-  drawHitboxes, 
-  drawHUD 
+import {
+  drawBackground,
+  drawFighter,
+  drawSpark,
+  drawHitboxes,
+  drawHUD
 } from '../../game/rendering';
 import {
   applyMovement,
@@ -23,21 +22,31 @@ import {
 } from '../../game/physics';
 import { handleAttack, updateTimers, processCombat } from '../../game/combat';
 import { updateAI } from '../../game/ai';
+import { useFlow } from '../flow/FlowProvider';
 
 /**
  * Match Preview screen with canvas-based gameplay
- * Enhanced with modular game engine and better code organization
+ * Reads fighters, stage, and config from centralized flow data
  */
-const MatchPreview = ({ config, p1, p2, stage, onExit }) => {
+const MatchPreview = () => {
+  const { data, resetTo } = useFlow();
+  const { config, p1, p2, stage } = data;
   const canvasRef = useRef(null);
   const [running, setRunning] = useState(true);
   const [timer, setTimer] = useState(config.timeLimit);
 
-  const meta = useMemo(() => ({
-    p1: p1 || 'Rhea',
-    p2: p2 === 'NPC' ? 'NPC' : p2,
-    stage: stage || 'Dojo Dusk'
-  }), [p1, p2, stage]);
+  useEffect(() => {
+    setTimer(config.timeLimit);
+  }, [config.timeLimit]);
+
+  const meta = useMemo(
+    () => ({
+      p1: p1 || 'Rhea',
+      p2: p2 === 'NPC' ? 'NPC' : p2,
+      stage: stage || 'Dojo Dusk'
+    }),
+    [p1, p2, stage]
+  );
 
   useEffect(() => {
     let animFrame = 0;
@@ -45,7 +54,7 @@ const MatchPreview = ({ config, p1, p2, stage, onExit }) => {
     let accumulator = 0;
 
     const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return undefined;
 
     const W = (canvasRef.current.width = CANVAS.WIDTH);
     const H = (canvasRef.current.height = CANVAS.HEIGHT);
@@ -129,10 +138,11 @@ const MatchPreview = ({ config, p1, p2, stage, onExit }) => {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
-    // AI state
-    const aiState = { timer: 0 };
+    const aiState = {
+      dashCooldown: 0,
+      desired: 0,
+    };
 
-    // Simulation step
     const stepSim = (dt) => {
       // Player input
       const gp = readGamepad();
@@ -254,7 +264,7 @@ const MatchPreview = ({ config, p1, p2, stage, onExit }) => {
             >
               {running ? 'Pause' : 'Resume'}
             </Button>
-            <Button onClick={onExit} ariaLabel="Exit to menu">
+            <Button onClick={() => resetTo('MainMenu')} ariaLabel="Exit to menu">
               Exit
             </Button>
           </div>
@@ -275,19 +285,6 @@ const MatchPreview = ({ config, p1, p2, stage, onExit }) => {
       </Card>
     </motion.div>
   );
-};
-
-MatchPreview.propTypes = {
-  config: PropTypes.shape({
-    rounds: PropTypes.number.isRequired,
-    timeLimit: PropTypes.number.isRequired,
-    difficulty: PropTypes.oneOf(['Easy', 'Normal', 'Hard']).isRequired,
-    control: PropTypes.oneOf(['Keyboard', 'Gamepad', 'AI']).isRequired,
-  }).isRequired,
-  p1: PropTypes.string,
-  p2: PropTypes.string.isRequired,
-  stage: PropTypes.string,
-  onExit: PropTypes.func.isRequired,
 };
 
 export default MatchPreview;
