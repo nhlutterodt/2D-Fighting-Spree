@@ -53,6 +53,13 @@ npm start
 
 The app will open at [http://localhost:3000](http://localhost:3000)
 
+## 🛠️ CI/CD
+
+- **GitHub Actions**: `.github/workflows/ci.yml` runs on pushes, pull requests, and manual triggers.
+- **Frontend job**: Installs dependencies with `npm ci`, executes the Jest suite in CI mode, and verifies the production build on Node.js 20.
+- **Cloud Functions job**: Installs with `npm ci`, lints, and builds the Firebase Functions package on Node.js 22 to match the specified runtime.
+
+
 ## 🎯 Controls
 
 ### Keyboard
