@@ -137,6 +137,47 @@ export class InputController {
 
     return snapshot;
   }
+
+  /**
+   * Non-destructive snapshot for debugging/overlays.
+   * Does not clear pressed keys or mutate gamepad state.
+   */
+  debugSnapshot() {
+    const gamepad = readGamepad();
+    const { axisX, btnJump, btnDash, btnAtk } = gamepad;
+
+    const actions = mapKeysToActions(this.heldKeys, this.pressedKeys);
+
+    const leftHeld = axisX < -0.25;
+    const rightHeld = axisX > 0.25;
+
+    actions.left.held = actions.left.held || leftHeld;
+    actions.right.held = actions.right.held || rightHeld;
+
+    actions.jump.held = actions.jump.held || btnJump;
+    actions.dash.held = actions.dash.held || btnDash;
+    actions.attack.held = actions.attack.held || btnAtk;
+
+    const jumpPressed = btnJump && !this.prevGamepad.btnJump;
+    const dashPressed = btnDash && !this.prevGamepad.btnDash;
+    const atkPressed = btnAtk && !this.prevGamepad.btnAtk;
+
+    actions.jump.pressed = actions.jump.pressed || jumpPressed;
+    actions.dash.pressed = actions.dash.pressed || dashPressed;
+    actions.attack.pressed = actions.attack.pressed || atkPressed;
+    return {
+      actions,
+      gamepad: {
+        ...gamepad,
+        leftHeld,
+        rightHeld,
+        jumpPressed,
+        dashPressed,
+        atkPressed,
+      },
+      heldKeys: new Set(this.heldKeys),
+    };
+  }
 }
 
 export default InputController;
