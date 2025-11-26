@@ -54,7 +54,7 @@ export function createCharacterSelectScene({ payload }) {
           locked: initial.p2 || (mergedConfig.allowOpponentSelect ? null : 'NPC'),
         },
       },
-      active: mergedConfig.allowOpponentSelect && !initial.p1 ? 'p1' : 'p1',
+      active: mergedConfig.allowOpponentSelect && !initial.p1 ? 'p1' : 'p2',
       blinkT: 0,
       rosterIds: [],
       badgeIds: [],
