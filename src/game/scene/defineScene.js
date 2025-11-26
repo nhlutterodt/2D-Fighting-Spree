@@ -44,7 +44,7 @@ export function defineScene({
     return {
       id,
       metadata,
-       initialize: initialize ? (shared) => initialize(sceneCtx, shared) : undefined,
+      initialize: initialize ? (shared) => initialize(sceneCtx, shared) : undefined,
       getState: () => state,
       handleInput: handleInput ? (input, shared) => handleInput(sceneCtx, input, shared) : undefined,
       update: update ? (dt, shared, input) => update(sceneCtx, dt, shared, input) : undefined,
