@@ -153,7 +153,14 @@ DevOverlay.propTypes = {
     paused: PropTypes.bool,
     running: PropTypes.bool,
   }),
-  logs: LogList.propTypes.logs,
+  logs: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string,
+      ts: PropTypes.number,
+      level: PropTypes.string,
+      message: PropTypes.string,
+    }),
+  ).isRequired,
   onToggle: PropTypes.func,
 };
 
