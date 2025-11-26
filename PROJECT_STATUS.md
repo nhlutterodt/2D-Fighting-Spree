@@ -15,12 +15,6 @@
 - Player 1 supports keyboard and gamepad input for movement, buffered jumps, dashes with cooldowns, and jab attacks; the NPC opponent uses AI that reacts based on difficulty, spacing, and grounded state.
 - Canvas rendering draws fighters, sparks, hit/hurt boxes, and a HUD showing names, HP bars, and timer. UI controls support pausing/resuming and exiting, with on-screen control hints and noted gamepad support.
 
-## Scene & Canvas Runtime
-- A new SceneManager + InputController stack drives canvas content with registered scenes (e.g., match preview, pause overlays), centralized key/gamepad actions, fixed-step timing, and shared environment settings like floor height and stage metadata.
-- Scenes can be pushed/popped for menu overlays or future environments, while shared HUD callbacks keep React UI in sync with canvas state for richer menus and interactive contexts.
-- A shared EntityStore registers base player/NPC/item types, supports tagged lookups, snapshots, and hydration, and is injected into scenes so canvas logic can manage combatants and items through a consistent API.
-- Scenes now declare an explicit initialize hook that runs before `onEnter`, allowing heavy setup (entity creation, environment wiring, async prep) to complete before updates/rendering begin, while logging initialization outcomes through the manager.
-
 ## Game Data Readiness
 - Six fighters and four stages are defined with style/environment metadata for selection menus.
 - Default configuration sets three rounds, a 99-second timer, Normal difficulty, and keyboard control defaults; menu items are predefined for the main menu.

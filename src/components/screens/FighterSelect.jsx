@@ -15,41 +15,6 @@ import { createCharacterSelectScene } from '../../game/scenes/characterSelectSce
 const FighterSelect = () => {
   const { data, updateData, goNext } = useFlow();
   const { p1, p2 } = data;
-  const canvasRef = useRef(null);
-  const [dualSelect, setDualSelect] = useState(p2 !== 'NPC');
-  const [hovered, setHovered] = useState(() => fighters[0]);
-  const initialRef = useRef({ p1, p2 });
-
-  useEffect(() => {
-    initialRef.current = { p1, p2 };
-  }, [p1, p2]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return undefined;
-
-    const manager = new SceneManager({ canvas, width: CANVAS.WIDTH, height: CANVAS.HEIGHT });
-
-    manager.register('character-select', createCharacterSelectScene);
-
-    manager.start('character-select', {
-      fighters,
-      config: { columns: 3, rows: 2, allowOpponentSelect: dualSelect },
-      initial: { p1: initialRef.current.p1, p2: dualSelect ? initialRef.current.p2 : null },
-      onSelection: ({ p1: nextP1, p2: nextP2 }) => {
-        updateData({ p1: nextP1, p2: dualSelect ? nextP2 || nextP1 : 'NPC' });
-      },
-      onCursor: ({ fighter }) => setHovered((prev) => fighter ?? prev),
-    });
-
-    return () => manager.stop();
-  }, [dualSelect, updateData]);
-
-  const toggleDualSelect = () => {
-    const next = !dualSelect;
-    setDualSelect(next);
-    if (!next) updateData({ p2: 'NPC' });
-  };
 
   return (
     <motion.div
@@ -106,6 +71,59 @@ const FighterSelect = () => {
         <Button
           onClick={goNext}
           disabled={!p1 || (dualSelect && !p2)}
+      <Card className="md:col-span-2">
+        <h2 className="text-2xl font-bold mb-4">Fighter Select</h2>
+        <div
+          className="grid sm:grid-cols-3 gap-3"
+          role="radiogroup"
+          aria-label="Select your fighter"
+        >
+          {fighters.map((fighter) => (
+            <button
+              key={fighter.id}
+              onClick={() => updateData({ p1: fighter.id })}
+              className={`rounded-xl p-3 text-left border transition focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
+                p1 === fighter.id
+                  ? 'border-indigo-400 bg-indigo-400/10'
+                  : 'border-white/10 hover:bg-white/5'
+              }`}
+              role="radio"
+              aria-checked={p1 === fighter.id}
+              aria-label={`Select ${fighter.id}, ${fighter.style} style, speed ${fighter.speed}, power ${fighter.power}`}
+            >
+              <div className="text-lg font-bold">{fighter.id}</div>
+              <div className="text-white/70 text-sm">{fighter.style}</div>
+              <div className="mt-2 text-xs text-white/60">
+                SPD {fighter.speed} • PWR {fighter.power}
+              </div>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <SectionTitle>Opponent</SectionTitle>
+        <label htmlFor="opponent-select" className="sr-only">
+          Select opponent
+        </label>
+        <select
+          id="opponent-select"
+          value={p2}
+          onChange={(e) => updateData({ p2: e.target.value })}
+          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        >
+          <option>NPC</option>
+          {fighters.map((fighter) => (
+            <option key={fighter.id} value={fighter.id}>
+              {fighter.id}
+            </option>
+          ))}
+        </select>
+
+        <SectionTitle className="mt-4">Continue</SectionTitle>
+        <Button
+          onClick={goNext}
+          disabled={!p1}
           ariaLabel="Continue to stage selection"
         >
           <BookOpen className="mr-2" aria-hidden="true" />
