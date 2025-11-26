@@ -3,7 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import Header from './Header';
 import { FlowProvider, FlowStepRenderer, useFlow } from './flow/FlowProvider';
 import { FLOW_STEPS } from '../constants/flowSteps';
-import { defaultConfig } from '../constants/gameData';
+import { defaultConfig, fighters } from '../constants/gameData';
 
 const AppShell = () => {
   const { goBack } = useFlow();
@@ -26,6 +26,7 @@ const FighterApp = () => (
     initialStep="Landing"
     initialData={{
       config: { ...defaultConfig },
+      fighters,
       p1: null,
       p2: 'NPC',
       stage: null,
