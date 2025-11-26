@@ -73,7 +73,7 @@ const MainMenu = () => {
   const handleFocusChange = (index) =>
     updateData((prev) => ({
       ...prev,
-      menuFocus: index,
+                  item={item}
     }));
 
   return (
