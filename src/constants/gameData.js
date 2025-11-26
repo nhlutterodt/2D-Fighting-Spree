@@ -27,8 +27,24 @@ export const defaultConfig = {
 };
 
 export const menuItems = [
-  { key: "Start", disabled: false },
-  { key: "Continue", disabled: true },
-  { key: "Load", disabled: true },
-  { key: "Options", disabled: true },
+  {
+    key: "Start",
+    description: "Set up fighters, stage, and rules for a new match",
+    disabled: false,
+  },
+  {
+    key: "Continue",
+    description: "Resume your latest session",
+    disabled: true,
+  },
+  {
+    key: "Load",
+    description: "Load a saved battle",
+    disabled: true,
+  },
+  {
+    key: "Options",
+    description: "Tune controls, audio, and visuals",
+    disabled: true,
+  },
 ];
