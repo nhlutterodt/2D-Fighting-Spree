@@ -119,10 +119,12 @@ export class SceneManager {
 
   setPaused(next) {
     this.paused = next;
+    this.log('info', 'pause state updated', { paused: next });
   }
 
   setEnvironment(nextEnv) {
     this.environment = { ...this.environment, ...nextEnv };
+    this.log('info', 'environment updated', { environment: this.environment });
   }
 
   shouldLog(level) {
