@@ -44,6 +44,11 @@ const MatchPreview = () => {
       resetTo('MainMenu');
       return undefined;
     }
+      p2: p2 === 'NPC' ? 'NPC' : p2,
+      stage: stage || 'Dojo Dusk',
+    }),
+    [p1, p2, stage]
+  );
 
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
