@@ -50,7 +50,7 @@ function createFighterState(x, facing, floor) {
 }
 
 export function createMatchPreviewScene({ payload }) {
-  const { config, meta, onHUD } = payload;
+  const { config, meta } = payload;
 
   return defineScene({
     id: 'match-preview',
