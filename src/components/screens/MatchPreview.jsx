@@ -1,33 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Bug, Pause, Play } from 'lucide-react';
 import { Card, Button } from '../ui';
 import { CANVAS } from '../../constants/physics';
 import { useFlow } from '../flow/FlowProvider';
 import { SceneManager } from '../../game/scene/SceneManager';
 import { createMatchPreviewScene } from '../../game/scenes/matchPreviewScene';
 import { createPauseOverlayScene } from '../../game/scenes/overlays';
-import { CANVAS, SIMULATION } from '../../constants/physics';
-import { nowSec, readGamepad } from '../../utils/helpers';
-import {
-  drawBackground,
-  drawFighter,
-  drawSpark,
-  drawHitboxes,
-  drawHUD
-} from '../../game/rendering';
-import {
-  applyMovement,
-  handleJump,
-  handleDash,
-  handleWallSlide,
-  applyGravityAndIntegrate,
-  handleFloorCollision,
-  clampToBounds,
-  updateFacing
-} from '../../game/physics';
-import { handleAttack, updateTimers, processCombat } from '../../game/combat';
-import { updateAI } from '../../game/ai';
-import { useFlow } from '../flow/FlowProvider';
+import DevOverlay from '../ui/DevOverlay';
 
 /**
  * Match Preview screen with canvas-based gameplay
@@ -39,7 +19,9 @@ const MatchPreview = () => {
   const canvasRef = useRef(null);
   const managerRef = useRef(null);
   const [paused, setPaused] = useState(false);
+  const [devOpen, setDevOpen] = useState(false);
   const [hud, setHud] = useState({ timer: config.timeLimit, p1HP: 100, p2HP: 100 });
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
     setHud((prev) => ({ ...prev, timer: config.timeLimit }));
@@ -49,216 +31,38 @@ const MatchPreview = () => {
     () => ({
       p1: p1 || 'Rhea',
       p2: p2 === 'NPC' ? 'NPC' : p2,
-      stage: stage || 'Dojo Dusk'
+      stage: stage || 'Dojo Dusk',
     }),
-    [p1, p2, stage]
-  );
-  const [running, setRunning] = useState(true);
-  const [timer, setTimer] = useState(config.timeLimit);
-
-  useEffect(() => {
-    setTimer(config.timeLimit);
-  }, [config.timeLimit]);
-
-  const meta = useMemo(
-    () => ({
-      p1: p1 || 'Rhea',
-      p2: p2 === 'NPC' ? 'NPC' : p2,
-      stage: stage || 'Dojo Dusk'
-    }),
-    [p1, p2, stage]
+    [p1, p2, stage],
   );
 
-  useEffect(() => {
-    let animFrame = 0;
-    let prevTime = performance.now();
-    let accumulator = 0;
-
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return undefined;
-
-    const W = (canvasRef.current.width = CANVAS.WIDTH);
-    const H = (canvasRef.current.height = CANVAS.HEIGHT);
-    const floor = H - CANVAS.FLOOR_OFFSET;
-
-    // Initialize fighters
-    const f1 = {
-      x: 200, y: floor, vx: 0, vy: 0, w: 40, h: 80,
-      facing: 1, color: '#a5b4fc', hp: 100,
-      grounded: true, lastGrounded: nowSec(),
-      jumpBufferedAt: null, jumpsLeft: 2,
-      dashing: false, dashT: 0, dashCD: 0,
-      wallSlide: false, wallNormal: 0,
-      hitstunT: 0, invulnT: 0, attackT: 0, spark: null
-    };
-
-    const f2 = {
-      x: 760, y: floor, vx: 0, vy: 0, w: 40, h: 80,
-      facing: -1, color: '#fca5a5', hp: 100,
-      grounded: true, lastGrounded: nowSec(),
-      jumpBufferedAt: null, jumpsLeft: 2,
-      dashing: false, dashT: 0, dashCD: 0,
-      wallSlide: false, wallNormal: 0,
-      hitstunT: 0, invulnT: 0, attackT: 0, spark: null
-    };
-
-    // Input state
-    const keys = {};
-    let prevJump = false;
-    let prevDash = false;
-    let prevAtk = false;
-
-    const onKeyDown = (e) => {
-      const k = e.key;
-      if (k === ' ' || e.code === 'Space') {
-        keys['ArrowUp'] = true;
-        e.preventDefault();
-        return;
-      }
-      if (k === 'ArrowUp' || k === 'w' || k === 'W') {
-        e.preventDefault();
-        return;
-      }
-      if (k === 'ArrowLeft' || k === 'ArrowRight') {
-        keys[k] = true;
-        e.preventDefault();
-        return;
-      }
-      if (k === 'Shift' || k === 'z' || k === 'Z') {
-        keys[k] = true;
-        e.preventDefault();
-        return;
-      }
-      keys[k] = true;
-    };
-
-    const onKeyUp = (e) => {
-      const k = e.key;
-      if (k === ' ' || e.code === 'Space') {
-        keys['ArrowUp'] = false;
-        e.preventDefault();
-        return;
-      }
-      if (k === 'ArrowUp' || k === 'w' || k === 'W') {
-        e.preventDefault();
-        return;
-      }
-      if (k === 'ArrowLeft' || k === 'ArrowRight') {
-        keys[k] = false;
-        e.preventDefault();
-        return;
-      }
-      if (k === 'Shift' || k === 'z' || k === 'Z') {
-        keys[k] = false;
-        e.preventDefault();
-        return;
-      }
-      keys[k] = false;
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-
-    const aiState = {
-      dashCooldown: 0,
-      desired: 0,
-    };
-
-    const stepSim = (dt) => {
-      // Player input
-      const gp = readGamepad();
-      const left = keys['ArrowLeft'] || (gp.axisX < -0.25);
-      const right = keys['ArrowRight'] || (gp.axisX > 0.25);
-      const jumpHeld = keys['ArrowUp'] || gp.btnJump;
-      const dashHeld = keys['Shift'] || gp.btnDash;
-      const atkHeld = keys['z'] || keys['Z'] || gp.btnAtk;
-
-      const jumpPressed = jumpHeld && !prevJump;
-      const dashPressed = dashHeld && !prevDash;
-      const atkPressed = atkHeld && !prevAtk;
-
-      prevJump = jumpHeld;
-      prevDash = dashHeld;
-      prevAtk = atkHeld;
-
-      // Buffer jump
-      if (jumpPressed) f1.jumpBufferedAt = nowSec();
-
-      // Player actions
-      const desired = (right ? 1 : 0) + (left ? -1 : 0);
-      const input = { desired, left, right, jumpPressed, jumpHeld };
-
-      handleDash(f1, dashPressed, input, dt);
-      handleAttack(f1, atkPressed);
-      updateTimers(f1, dt);
-
-      applyMovement(f1, input, dt);
-      handleJump(f1, jumpPressed, jumpHeld);
-      handleWallSlide(f1, input, jumpPressed);
-      applyGravityAndIntegrate(f1, dt);
-      handleFloorCollision(f1);
-      clampToBounds(f1);
-      updateFacing(f1, f2);
-
-      // NPC AI
-      updateAI(f2, f1, config.difficulty, dt, aiState);
-      updateTimers(f2, dt);
-      applyGravityAndIntegrate(f2, dt);
-      handleFloorCollision(f2);
-      clampToBounds(f2);
-      updateFacing(f2, f1);
-
-      // Combat
-      const hitboxes = processCombat(f1, f2);
-
-      // Timer
-      if (timer > 0) {
-        setTimer((s) => Math.max(0, s - dt));
-      }
-
-      // Render
-      drawBackground(ctx, W, H, floor);
-      drawFighter(ctx, f1);
-      drawFighter(ctx, f2);
-      drawSpark(ctx, f1.spark);
-      drawSpark(ctx, f2.spark);
-      drawHitboxes(ctx, hitboxes);
-      drawHUD(ctx, {
-        width: W,
-        p1Name: meta.p1,
-        p2Name: meta.p2,
-        p1HP: f1.hp,
-        p2HP: f2.hp,
-        timer
-      });
-    };
-
-    // Main loop
-    const frame = (tMs) => {
-      const t = tMs / 1000;
-      const dt = Math.min(SIMULATION.MAX_FRAME_DT, t - prevTime / 1000);
-      prevTime = tMs;
-
-      if (running) {
-        accumulator += dt;
-        while (accumulator >= SIMULATION.FIXED_DT) {
-          stepSim(SIMULATION.FIXED_DT);
-          accumulator -= SIMULATION.FIXED_DT;
-        }
-      } else {
-        stepSim(0);
-      }
-
-      animFrame = requestAnimationFrame(frame);
-    };
-
-    animFrame = requestAnimationFrame(frame);
+  const pushLog = useCallback((level, message, metaData) => {
+    setLogs((prev) => {
+      const entry = { id: `${Date.now()}-${prev.length}`, ts: Date.now(), level, message, meta: metaData };
+      const next = [...prev, entry];
+      return next.slice(-80);
+    });
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
-    const manager = new SceneManager({ canvas, width: CANVAS.WIDTH, height: CANVAS.HEIGHT });
+    const forwardLog = (level, message, metaData) => {
+      const impl = console?.[level] ?? console.log;
+      impl?.(message, metaData);
+      pushLog(level, message, metaData);
+    };
+
+    const logger = {
+      debug: (message, metaData) => forwardLog('debug', message, metaData),
+      info: (message, metaData) => forwardLog('info', message, metaData),
+      warn: (message, metaData) => forwardLog('warn', message, metaData),
+      error: (message, metaData) => forwardLog('error', message, metaData),
+      log: (message, metaData) => forwardLog('log', message, metaData),
+    };
+
+    const manager = new SceneManager({ canvas, width: CANVAS.WIDTH, height: CANVAS.HEIGHT, logger, logLevel: 'info' });
     managerRef.current = manager;
 
     manager.register('match-preview', createMatchPreviewScene);
@@ -266,8 +70,21 @@ const MatchPreview = () => {
 
     manager.start('match-preview', { config, meta, onHUD: setHud });
 
-    return () => manager.stop();
-  }, [config, meta]);
+    const handleKeyToggle = (e) => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        setDevOpen((open) => !open);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyToggle);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyToggle);
+      manager.stop();
+      managerRef.current = null;
+    };
+  }, [config, meta, pushLog]);
 
   const togglePause = () => {
     const next = !paused;
@@ -306,7 +123,9 @@ const MatchPreview = () => {
               onClick={togglePause}
               ariaLabel={paused ? 'Resume game' : 'Pause game'}
             >
-              {paused ? 'Resume' : 'Pause'}
+              <span className="flex items-center gap-2">
+                {paused ? <Play size={16} /> : <Pause size={16} />} {paused ? 'Resume' : 'Pause'}
+              </span>
             </Button>
             <Button onClick={() => resetTo('MainMenu')} ariaLabel="Exit to menu">
               Exit
@@ -316,15 +135,35 @@ const MatchPreview = () => {
       </Card>
 
       <Card>
-        <canvas
-          ref={canvasRef}
-          className="w-full rounded-xl border border-white/10"
-          aria-label="Game canvas"
-        />
+        <div className="flex flex-col gap-4 md:flex-row">
+          <div className="relative flex-1">
+            <canvas
+              ref={canvasRef}
+              className="w-full rounded-xl border border-white/10"
+              aria-label="Game canvas"
+            />
+            <Button
+              variant="secondary"
+              className="absolute right-3 top-3 flex items-center gap-2 px-3 py-2 text-xs"
+              onClick={() => setDevOpen((open) => !open)}
+              ariaLabel="Toggle developer overlay"
+            >
+              <Bug size={14} /> Dev
+            </Button>
+          </div>
+
+          <DevOverlay
+            open={devOpen}
+            manager={managerRef.current}
+            logs={logs}
+            onToggle={() => setDevOpen((open) => !open)}
+          />
+        </div>
+
         <div className="mt-2 text-xs text-white/60">
           Controls: ← → move, Space jump (tap=short hop, hold=full). Shift=dash. Z=jab.
           Double-jump enabled. Hold toward a wall to slide; press jump to wall-jump.
-          Gamepad supported (Stick + A/B/Y).
+          Gamepad supported (Stick + A/B/Y). Toggle dev overlay with F1.
         </div>
       </Card>
     </motion.div>
