@@ -154,10 +154,17 @@ export class InputController {
     actions.left.held = actions.left.held || leftHeld;
     actions.right.held = actions.right.held || rightHeld;
 
+    actions.jump.held = actions.jump.held || btnJump;
+    actions.dash.held = actions.dash.held || btnDash;
+    actions.attack.held = actions.attack.held || btnAtk;
+
     const jumpPressed = btnJump && !this.prevGamepad.btnJump;
     const dashPressed = btnDash && !this.prevGamepad.btnDash;
     const atkPressed = btnAtk && !this.prevGamepad.btnAtk;
 
+    actions.jump.pressed = actions.jump.pressed || jumpPressed;
+    actions.dash.pressed = actions.dash.pressed || dashPressed;
+    actions.attack.pressed = actions.attack.pressed || atkPressed;
     return {
       actions,
       gamepad: {
