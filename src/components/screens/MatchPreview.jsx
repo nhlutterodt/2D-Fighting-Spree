@@ -34,7 +34,7 @@ const MatchPreview = () => {
         config &&
           Number.isFinite(config.timeLimit) &&
           Number.isFinite(config.rounds) &&
-          typeof config.difficulty !== 'undefined'
+          typeof config.difficulty === 'string' && config.difficulty.length > 0
       ),
     [config]
   );
