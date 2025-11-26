@@ -63,6 +63,7 @@ const MatchPreview = () => {
     };
 
     const manager = new SceneManager({ canvas, width: CANVAS.WIDTH, height: CANVAS.HEIGHT, logger, logLevel: 'info' });
+    const manager = new SceneManager({ canvas, width: CANVAS.WIDTH, height: CANVAS.HEIGHT });
     managerRef.current = manager;
 
     manager.register('match-preview', createMatchPreviewScene);
@@ -85,6 +86,8 @@ const MatchPreview = () => {
       managerRef.current = null;
     };
   }, [config, meta, pushLog]);
+    return () => manager.stop();
+  }, [config, meta]);
 
   const togglePause = () => {
     const next = !paused;
