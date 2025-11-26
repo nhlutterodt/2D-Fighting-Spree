@@ -1,46 +1,49 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 import { Swords } from 'lucide-react';
 import { Card, Button, SectionTitle } from '../ui';
 import { clamp } from '../../utils/helpers';
+import { useFlow } from '../flow/FlowProvider';
 
 /**
  * Match Configuration screen component
- * Enhanced with better form controls and validation
+ * Reads and updates config from the shared flow data
  */
-const StartConfig = ({ config, setConfig, onNext }) => {
+const StartConfig = () => {
+  const { data, updateData, goNext } = useFlow();
+  const { config } = data;
+
   const handleRoundsChange = (e) => {
-    const value = clamp(parseInt(e.target.value || "3"), 1, 9);
-    setConfig({ ...config, rounds: value });
+    const value = clamp(parseInt(e.target.value || '3', 10), 1, 9);
+    updateData({ config: { ...config, rounds: value } });
   };
 
   const handleTimeLimitChange = (e) => {
-    const value = clamp(parseInt(e.target.value || "99"), 30, 300);
-    setConfig({ ...config, timeLimit: value });
+    const value = clamp(parseInt(e.target.value || '99', 10), 30, 300);
+    updateData({ config: { ...config, timeLimit: value } });
   };
 
   const handleDifficultyChange = (e) => {
-    setConfig({ ...config, difficulty: e.target.value });
+    updateData({ config: { ...config, difficulty: e.target.value } });
   };
 
   const handleControlChange = (e) => {
-    setConfig({ ...config, control: e.target.value });
+    updateData({ config: { ...config, control: e.target.value } });
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 6 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -6 }} 
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
       className="grid md:grid-cols-3 gap-6"
     >
       <Card className="md:col-span-2">
         <h2 className="text-2xl font-bold mb-4">Match Configuration</h2>
         <form className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label 
-              htmlFor="rounds" 
+            <label
+              htmlFor="rounds"
               className="block text-sm text-white/70 mb-1"
             >
               Rounds (Best of)
@@ -59,10 +62,10 @@ const StartConfig = ({ config, setConfig, onNext }) => {
               Number of rounds to win the match, between 1 and 9
             </span>
           </div>
-          
+
           <div>
-            <label 
-              htmlFor="timeLimit" 
+            <label
+              htmlFor="timeLimit"
               className="block text-sm text-white/70 mb-1"
             >
               Time Limit (sec)
@@ -81,10 +84,10 @@ const StartConfig = ({ config, setConfig, onNext }) => {
               Time limit per round in seconds, between 30 and 300
             </span>
           </div>
-          
+
           <div>
-            <label 
-              htmlFor="difficulty" 
+            <label
+              htmlFor="difficulty"
               className="block text-sm text-white/70 mb-1"
             >
               Difficulty
@@ -100,10 +103,10 @@ const StartConfig = ({ config, setConfig, onNext }) => {
               <option>Hard</option>
             </select>
           </div>
-          
+
           <div>
-            <label 
-              htmlFor="control" 
+            <label
+              htmlFor="control"
               className="block text-sm text-white/70 mb-1"
             >
               Player 1 Control
@@ -121,28 +124,17 @@ const StartConfig = ({ config, setConfig, onNext }) => {
           </div>
         </form>
       </Card>
-      
+
       <Card>
         <SectionTitle>Next</SectionTitle>
         <p className="text-white/70 mb-4">Continue to select fighters.</p>
-        <Button onClick={onNext} ariaLabel="Continue to fighter selection">
-          <Swords className="mr-2" aria-hidden="true" /> 
+        <Button onClick={goNext} ariaLabel="Continue to fighter selection">
+          <Swords className="mr-2" aria-hidden="true" />
           Choose Fighters
         </Button>
       </Card>
     </motion.div>
   );
-};
-
-StartConfig.propTypes = {
-  config: PropTypes.shape({
-    rounds: PropTypes.number.isRequired,
-    timeLimit: PropTypes.number.isRequired,
-    difficulty: PropTypes.oneOf(['Easy', 'Normal', 'Hard']).isRequired,
-    control: PropTypes.oneOf(['Keyboard', 'Gamepad', 'AI']).isRequired,
-  }).isRequired,
-  setConfig: PropTypes.func.isRequired,
-  onNext: PropTypes.func.isRequired,
 };
 
 export default StartConfig;

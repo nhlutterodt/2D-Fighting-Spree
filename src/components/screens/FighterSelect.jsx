@@ -1,37 +1,40 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
 import { Card, Button, SectionTitle } from '../ui';
 import { fighters } from '../../constants/gameData';
+import { useFlow } from '../flow/FlowProvider';
 
 /**
  * Fighter Selection screen component
- * Enhanced with better visual feedback and accessibility
+ * Pulls player selections from shared flow data and advances to the next step
  */
-const FighterSelect = ({ p1, setP1, p2, setP2, onNext }) => {
+const FighterSelect = () => {
+  const { data, updateData, goNext } = useFlow();
+  const { p1, p2 } = data;
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 6 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -6 }} 
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
       className="grid md:grid-cols-3 gap-6"
     >
       <Card className="md:col-span-2">
         <h2 className="text-2xl font-bold mb-4">Fighter Select</h2>
-        <div 
-          className="grid sm:grid-cols-3 gap-3" 
-          role="radiogroup" 
+        <div
+          className="grid sm:grid-cols-3 gap-3"
+          role="radiogroup"
           aria-label="Select your fighter"
         >
           {fighters.map((fighter) => (
             <button
               key={fighter.id}
-              onClick={() => setP1(fighter.id)}
+              onClick={() => updateData({ p1: fighter.id })}
               className={`rounded-xl p-3 text-left border transition focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
-                p1 === fighter.id 
-                  ? "border-indigo-400 bg-indigo-400/10" 
-                  : "border-white/10 hover:bg-white/5"
+                p1 === fighter.id
+                  ? 'border-indigo-400 bg-indigo-400/10'
+                  : 'border-white/10 hover:bg-white/5'
               }`}
               role="radio"
               aria-checked={p1 === fighter.id}
@@ -46,7 +49,7 @@ const FighterSelect = ({ p1, setP1, p2, setP2, onNext }) => {
           ))}
         </div>
       </Card>
-      
+
       <Card>
         <SectionTitle>Opponent</SectionTitle>
         <label htmlFor="opponent-select" className="sr-only">
@@ -55,7 +58,7 @@ const FighterSelect = ({ p1, setP1, p2, setP2, onNext }) => {
         <select
           id="opponent-select"
           value={p2}
-          onChange={(e) => setP2(e.target.value)}
+          onChange={(e) => updateData({ p2: e.target.value })}
           className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
         >
           <option>NPC</option>
@@ -65,27 +68,19 @@ const FighterSelect = ({ p1, setP1, p2, setP2, onNext }) => {
             </option>
           ))}
         </select>
-        
+
         <SectionTitle className="mt-4">Continue</SectionTitle>
-        <Button 
-          onClick={onNext} 
+        <Button
+          onClick={goNext}
           disabled={!p1}
           ariaLabel="Continue to stage selection"
         >
-          <BookOpen className="mr-2" aria-hidden="true" /> 
+          <BookOpen className="mr-2" aria-hidden="true" />
           Pick Stage
         </Button>
       </Card>
     </motion.div>
   );
-};
-
-FighterSelect.propTypes = {
-  p1: PropTypes.string,
-  setP1: PropTypes.func.isRequired,
-  p2: PropTypes.string.isRequired,
-  setP2: PropTypes.func.isRequired,
-  onNext: PropTypes.func.isRequired,
 };
 
 export default FighterSelect;
